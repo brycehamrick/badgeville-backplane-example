@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0" />
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <link href="http://cdn.quilt.janrain.com/2.1.4/quilt.css" media="all" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+      .contentBoxWhiteShadow .btn_large {margin-top: 10px}
+      .contentBoxDarkBlueTexture {border-radius: 0; padding-top: 50px; padding-bottom: 50px;}
+      .contentBoxDarkBlueTexture h1 {padding-bottom: 25px;}
+      .col_10 h2 {padding-top: 0;}
+      .centered-col {float: none;margin: 0 auto; display: block;}
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js"></script>
+    <script type="text/javascript" src="http://d134l0cdryxgwa.cloudfront.net/backplane2.js" ></script>
+  </head>
+  <body class="janrain-font">
+    <div class="global_nav">
+      <div class="wrapper">
+        <ul id="loggedOutNavigation" class="nav-list">
+          <li><a href="#" class="janrainEngage" id="signInLink">Sign In</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="contentBoxDarkBlueTexture">
+      <div class="wrapper">
+        <h1 class="lrg centerText">Welcome to the Janrain Demo Site.</h1>
+      </div>
+    </div>
+    <div class="wrapper">
+      <div id="launchDemo" class="section" style="display: none;">
+        <div class="grid-block">
+          <div class="centered-col col2">
+            <div class="contentBoxWhiteShadow">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bv_header"></div>
+    <div class="bv_showcase" bv_options='{"hide_position":true}' style=""></div>
+    <script>
+      window.BadgevilleAsynchInit = function() {
+        Badgeville.extend( Badgeville.Settings, {
+          key: 'd80394b62e1d622689653ebc3cd97c50',
+          domain: 'pmtest.com'
+        });
+      };
+      (function() {
+        var s = document.createElement( 'script' );
+        s.async = true;
+        s.src = 'http://api.badgeville.com/v4/badgeville-current.js'; 
+        document.body.appendChild( s );
+      }());
+      var BVOAK = '5164a2c7343fd37b1f0082bb';
+      function getBVPlayer() {
+        Badgeville.$.getJSONP(
+          'http://oauth.badgeville.com/backplane?token=' + BVOAK + '&channelName=' + Backplane.getChannelName() + '&messageId=' + encodeURIComponent( messageId ),
+          function( data ) {
+            if ( !data.error ) {
+              if ( !data.email ) {
+                console.error('No Email');
+                return;
+              }
+
+              delete data.preferredUsername;
+
+              if ( data.email ) {
+                Badgeville.setPlayer( data );
+              }
+            } else {
+              throw new Error( 'Badgeville/Backplane Error: ' + data.error );
+            }
+          }
+        );
+      }
+    </script>
+    <script type="text/javascript">
+      (function() {
+        if (typeof window.janrain !== 'object') window.janrain = {};
+        if (typeof window.janrain.settings !== 'object') window.janrain.settings = {};
+        
+        janrain.settings.tokenUrl = 'http://proto1.janrain.com/badgeville/index.html';
+        janrain.settings.tokenAction = 'event';
+        janrain.settings.type = 'modal';
+
+        function isReady() { janrain.ready = true; };
+        if (document.addEventListener) {
+          document.addEventListener("DOMContentLoaded", isReady, false);
+        } else {
+          window.attachEvent('onload', isReady);
+        }
+
+        var e = document.createElement('script');
+        e.type = 'text/javascript';
+        e.id = 'janrainAuthWidget';
+
+        if (document.location.protocol === 'https:') {
+          e.src = 'https://rpxnow.com/js/lib/phillip-bp-demo/engage.js';
+        } else {
+          e.src = 'http://widget-cdn.rpxnow.com/js/lib/phillip-bp-demo/engage.js';
+        }
+
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(e, s);
+      })();
+      function bpReady() {
+        janrain.engage.signin.setBackplaneChannel(Backplane.getChannelID());
+        Backplane.subscribe(function(message){
+          janrain.engage.signin.modal.close();
+          try {
+            messageId = message.messageURL;
+            messageId = messageId.substring( messageId.indexOf( 'message/' ) + 8 );
+            if ( !window.Badgeville ) {
+              var bvai = window.BadgevilleAsynchInit;
+              window.BadgevilleAsynchInit = function(){
+                bvai.apply( window, arguments );
+                getBVPlayer();
+              };
+            } else {
+              getBVPlayer();
+            }
+          } catch(e) {
+            throw new Error( 'Valid Backplane messageId not found' );
+          }
+        });
+      }
+      function setupBp() {
+        Backplane(bpReady);
+        Backplane.init({
+          serverBaseURL: 'https://backplane1.janrainbackplane.com/v2',
+          busName: 'phillip-bp-demo',
+          block: 20
+        });
+      }
+      function janrainWidgetOnload() {
+        setupBp();
+      }
+    </script>
