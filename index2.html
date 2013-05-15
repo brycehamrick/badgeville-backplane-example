@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Backplane 2.0 + Badgeville</title>
+  <script type="text/javascript" src="http://d134l0cdryxgwa.cloudfront.net/backplane2.js" ></script>
+  <script type="text/javascript">
+
+    var setupBP = function setupBP() {
+      Backplane( bpReady );
+      Backplane.init({
+        serverBaseURL: "https://backplane1.janrainbackplane.com/v2",
+        busName: "phillip-bp-demo" // Replace with Janrain provided bus
+      });
+    }
+
+    function janrainWidgetOnload() {
+      setupBP();
+    }
+
+    (function() {
+      if (typeof window.janrain !== 'object') window.janrain = {};
+      if (typeof window.janrain.settings !== 'object') window.janrain.settings = {};
+              
+      /*
+      **  STEP 1: Provide the BV OAuth Key. You generate this key from the BV Admin Console at Administer > OAuth.
+      */
+      var BVOAK = '5164a2c7343fd37b1f0082bb';
+      /*
+      **  END STEP 1
+      */
+
+      /*
+      **  STEP 2: Configure Janrain to use the BV OAuth endpoint as the tokenURL and trigger events.
+      */
+      janrain.settings.tokenUrl = 'http://oauth.badgeville.com/backplane?token=' + BVOAK;
+      janrain.settings.tokenAction = 'event';
+      /*
+      **  END STEP 2
+      */
+
+      function isReady() { janrain.ready = true; };
+      if (document.addEventListener) {
+        document.addEventListener("DOMContentLoaded", isReady, false);
+      } else {
+        window.attachEvent('onload', isReady);
+      }
+
+      var e = document.createElement('script');
+      e.type = 'text/javascript';
+      e.id = 'janrainAuthWidget';
+
+      if (document.location.protocol === 'https:') {
+        e.src = 'https://rpxnow.com/js/lib/phillip-bp-demo/engage.js';
+      } else {
+        e.src = 'http://widget-cdn.rpxnow.com/js/lib/phillip-bp-demo/engage.js';
+      }
+
+      var s = document.getElementsByTagName('script')[0];
+      s.parentNode.insertBefore(e, s);
+    })();
+  </script>
+</head>
+<body>
+  <!--
+
+  PAGE CONTENT GOES HERE
+
+  -->
+  <div class="bv_header"></div><!-- Badgeville Header Widget -->
+  <br/> 
+  <div id="janrainEngageEmbed"></div><!-- Janrain Social Login Widget -->
+  <!--
+
+  END PAGE CONTENT
+
+  -->
+  <script type="text/javascript" >
+    var bpReady = function bpReady() {
+      janrain.engage.signin.setBackplaneChannel( Backplane.getChannelID() );
+
+      /*
+      **  STEP 3: Add the below code to the "bpReady" function in order to call Badgeville.setPlayer
+      */
+      function getBVPlayer() {
+        Badgeville.$.getJSONP(
+          janrain.settings.tokenUrl + '&channelName=' + Backplane.getChannelName() + '&messageId=' + encodeURIComponent( messageId ),
+          function( data ) {
+            if ( !data.error ) {
+              if ( !data.email ) {
+                /* (Note: Step 3 continues past this point. Look for END STEP 3 for the stopping point.)
+                **
+                **  STEP 4: If using a provider that does not capture a user's email (such as Twitter), this is where the email value can be configured by setting data.email.
+
+                **  data.preferredUsername can be used to form a unique email, though the preferredUsername value itself is not unique.
+                */
+
+                /*
+                **  END STEP 4
+                */
+              }
+
+              // Remove the preferredUsername value as it is not recognized by Badgeville.
+              delete data.preferredUsername;
+
+              // Trigger a setPlayer call with the final data if we have email.
+              if ( data.email ) {
+                Badgeville.setPlayer( data );
+              }
+            } else {
+              throw new Error( 'Badgeville/Backplane Error: ' + data.error );
+            }
+          }
+        );
+      }
+      var messageId;
+      var bvbp_sub = Backplane.subscribe(function( message ) {
+        if ( message.type == 'identity/login' ) {
+          Backplane.unsubscribe( bvbp_sub );
+          try {
+            messageId = message.messageURL;
+            messageId = messageId.substring( messageId.indexOf( 'message/' ) + 8 );
+            if ( !window.Badgeville ) {
+              var bvai = window.BadgevilleAsynchInit;
+              window.BadgevilleAsynchInit = function(){
+                bvai.apply( window, arguments );
+                getBVPlayer();
+              };
+            } else {
+              getBVPlayer();
+            }
+          } catch(e) {
+            throw new Error( 'Valid Backplane messageId not found' );
+          }
+        }
+      });
+      /*
+      **  END STEP 3
+      */
+    }
+  </script>
+  <!--
+ Include Badgeville asynchronously as normal
+  -->
+  <script>
+    window.BadgevilleAsynchInit = function() {
+      Badgeville.extend( Badgeville.Settings, {
+        key: 'd80394b62e1d622689653ebc3cd97c50', // Replace with your Badgeville key
+        domain: 'pmtest.com',   // Replace with Badgeville site. Include the domain only, such as yoursite.com.
+      });
+    };
+    (function() {
+      var s = document.createElement( 'script' );
+      s.async = true;
+      s.src = 'http://sandbox.badgeville.com/v4/badgeville-current.js'; 
+      document.body.appendChild( s );
+    }());
+  </script>
+</body>
+</html>
